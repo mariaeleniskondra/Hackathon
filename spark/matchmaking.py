@@ -15,6 +15,33 @@ from pyspark.sql import functions as F
 from scoring import TOP_K, category_score, coverage, location_score, total_score
 
 
+def _norm_list(col):
+    """lower + trim, αφαίρεση κενών και διπλών. Ο loader της Μιλένας δεν κανονικοποιεί τους
+    όρους (κρατά ό,τι έχει το JSON), οπότε το κάνει εδώ το matchmaking. Η κανονική
+    κανονικοποίηση συνωνύμων γίνεται upstream (normalizer Μαριφύλλης)· εδώ είναι δίχτυ ασφαλείας."""
+    cleaned = F.transform(F.coalesce(col, F.array().cast("array<string>")), lambda x: F.lower(F.trim(x)))
+    return F.array_distinct(F.filter(cleaned, lambda x: x != ""))
+
+
+def prepare_profiles(profiles: DataFrame) -> DataFrame:
+    """Κανονικοποιεί category/location (πεζά, trim) και skills/services/needs.
+    Δουλεύει πάνω στο schema του κοινού data_loader.py (id, name, category, location, skills, ...).
+    Είναι idempotent: μπορεί να κληθεί και σε ήδη κανονικοποιημένα δεδομένα."""
+    return (
+        profiles.filter(F.col("id").isNotNull())
+        .dropDuplicates(["id"])
+        .select(
+            "id",
+            "name",
+            F.lower(F.trim("category")).alias("category"),
+            F.lower(F.trim("location")).alias("location"),
+            _norm_list(F.col("skills")).alias("skills"),
+            _norm_list(F.col("services")).alias("services"),
+            _norm_list(F.col("needs")).alias("needs"),
+        )
+    )
+
+
 def _with_offers(profiles: DataFrame) -> DataFrame:
     return profiles.select(
         "id",
@@ -36,7 +63,7 @@ def candidate_pairs(p: DataFrame) -> DataFrame:
 
 
 def compute_partners(profiles: DataFrame, top_k: int = TOP_K) -> DataFrame:
-    p = _with_offers(profiles)
+    p = _with_offers(prepare_profiles(profiles))
     pairs = candidate_pairs(p)
 
     a = p.select(

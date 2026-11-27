@@ -12,19 +12,50 @@ sys.path.insert(0, os.path.join(ROOT, "spark"))
 
 from data_loader import load_profiles  # noqa: E402
 from matchmaking import compute_partners  # noqa: E402
-from spark_config import get_spark  # noqa: E402
+from spark_config import create_spark_session  # noqa: E402
+
+MINI = os.path.join(ROOT, "datasets", "mini_profiles.json")
+SHARED_SAMPLE = os.path.join(ROOT, "tests", "fixtures", "similarity_sample.json")
 
 
 @pytest.fixture(scope="module")
-def result():
-    spark = get_spark("test-matchmaking")
-    profiles = load_profiles(spark, os.path.join(ROOT, "datasets", "mini_profiles.json"))
+def spark():
+    s = create_spark_session("test-matchmaking")
+    yield s
+    s.stop()
+
+
+@pytest.fixture(scope="module")
+def result(spark):
+    profiles = load_profiles(spark, MINI)
     rows = compute_partners(profiles).collect()
     out = {}
     for r in rows:
         out.setdefault(r.profile_id, []).append(r)
-    yield out
-    spark.stop()
+    return out
+
+
+def test_shared_sample_runs_without_self_match(spark):
+    """Smoke test πάνω στο κοινό fixture της Μιλένας (5 προφίλ)."""
+    rows = compute_partners(load_profiles(spark, SHARED_SAMPLE)).collect()
+    for r in rows:
+        assert r.profile_id != r.partner_id
+        assert 0.0 <= r.match_score <= 1.0
+        assert r.match_reason
+
+
+def test_terms_are_normalized(spark, tmp_path):
+    """Διαφορετικά κεφαλαία/κενά στον ίδιο όρο πρέπει να ταιριάζουν (ο loader δεν κανονικοποιεί)."""
+    import json
+
+    data = [
+        {"id": 1, "name": "A", "category": "Technology", "location": "Patras", "needs": ["  Digital Marketing "]},
+        {"id": 2, "name": "B", "category": "Marketing", "location": "Patras", "services": ["digital marketing"]},
+    ]
+    p = tmp_path / "norm.json"
+    p.write_text(json.dumps(data), encoding="utf-8")
+    rows = compute_partners(load_profiles(spark, p)).collect()
+    assert {(r.profile_id, r.partner_id) for r in rows} == {(1, 2), (2, 1)}
 
 
 def partners(result, pid):

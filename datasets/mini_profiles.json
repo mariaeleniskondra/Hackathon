@@ -1,0 +1,18 @@
+[
+  {"id": 1, "name": "Tech Solutions", "type": "SME", "category": "Technology", "location": "Patras",
+   "skills": ["Python", "React"], "services": ["Web Development"], "products": [], "needs": ["Digital Marketing"]},
+  {"id": 2, "name": "Marketing Studio", "type": "SME", "category": "Marketing", "location": "Patras",
+   "skills": ["SEO"], "services": ["Digital Marketing"], "products": [], "needs": ["Web Development"]},
+  {"id": 3, "name": "Growth Freelancer", "type": "Freelancer", "category": "Marketing", "location": "Athens",
+   "skills": ["Digital Marketing"], "services": [], "products": [], "needs": []},
+  {"id": 4, "name": "Pixel Design", "type": "Freelancer", "category": "Design", "location": "Athens",
+   "skills": ["UX Design"], "services": ["Branding"], "products": [], "needs": ["Digital Marketing"]},
+  {"id": 5, "name": "Startup Alpha", "type": "Young Entrepreneur", "category": "Technology", "location": "Athens",
+   "skills": ["Backend"], "services": [], "products": [], "needs": ["UX Design"]},
+  {"id": 6, "name": "Agro Farm", "type": "SME", "category": "Agriculture", "location": "Patras",
+   "skills": ["Organic Farming"], "services": [], "products": ["Olive Oil"], "needs": []},
+  {"id": 7, "name": "Cloud Experts", "type": "SME", "category": "Technology", "location": "Patras",
+   "skills": ["Python", "Cloud"], "services": ["Web Development"], "products": [], "needs": ["Digital Marketing"]},
+  {"id": 8, "name": "No Info Co", "type": "SME", "category": null, "location": null,
+   "skills": [], "services": [], "products": [], "needs": []}
+]
